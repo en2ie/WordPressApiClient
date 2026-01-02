@@ -18,16 +18,16 @@ use LIN3S\WordPressApiClient\Exception\AuthorizationNotConfigured;
 
 class Client
 {
-    private $client;
-    private $domain;
-    private $applicationPassword;
-    private $applicationUser;
+    private GuzzleClient $client;
+    private string $domain;
+    private ?string $applicationPassword;
+    private ?string $applicationUser;
 
     public function __construct(
         GuzzleClient $client,
         string $domain,
-        string $applicationUser = null,
-        string $applicationPassword = null
+        ?string $applicationUser = null,
+        ?string $applicationPassword = null
     ) {
         $this->client = $client;
         $this->domain = $domain;
@@ -35,7 +35,7 @@ class Client
         $this->applicationUser = $applicationUser;
     }
 
-    public function getResources(string $resourceType, string $lang = null, int $perPage = 10, int $page = 1)
+    public function getResources(string $resourceType, ?string $lang = null, int $perPage = 10, int $page = 1): array
     {
         $path = '/wp-json/wp/v2/%s?per_page=%d&page=%d&_embed';
 
@@ -53,7 +53,7 @@ class Client
         return json_decode($response->getBody()->getContents(), true);
     }
 
-    public function countResources(string $resourceType, string $lang = null, int $perPage = 10)
+    public function countResources(string $resourceType, ?string $lang = null, int $perPage = 10): string
     {
         $path = '/wp-json/wp/v2/%s?per_page=%d';
 
@@ -73,10 +73,10 @@ class Client
     public function countResourcesByQuery(
         string $resourceType,
         string $query,
-        string $lang = null,
+        ?string $lang = null,
         int $perPage = 10,
         int $page = 1
-    ) {
+    ): string {
         $path = '/wp-json/wp/v2/%s?%s&per_page=%d&page=%d&_embed';
 
         if ($lang) {
@@ -93,7 +93,7 @@ class Client
         return $response->getHeader('X-WP-Total')[0];
     }
 
-    public function getResourceBySlug(string $resourceType, string $slug, string $lang = null)
+    public function getResourceBySlug(string $resourceType, string $slug, ?string $lang = null): ?array
     {
         $path = '/wp-json/wp/v2/%s?slug=%s&_embed';
 
@@ -111,10 +111,10 @@ class Client
     public function getResourcesByQuery(
         string $resourceType,
         string $query,
-        string $lang = null,
+        ?string $lang = null,
         int $perPage = 10,
         int $page = 1
-    ) {
+    ): array {
         $path = '/wp-json/wp/v2/%s?%s&per_page=%d&page=%d&_embed';
 
         if ($lang) {
@@ -135,9 +135,9 @@ class Client
     public function getResourceById(
         string $resourceType,
         string $id,
-        string $lang = null,
-        $secure = false
-    ) {
+        ?string $lang = null,
+        bool $secure = false
+    ): array {
         $headers = $secure ? $this->getAuthHeader() : [];
 
         $path = '/wp-json/wp/v2/%s/%s?_embed';
@@ -154,7 +154,7 @@ class Client
         return json_decode($response->getBody()->getContents(), true);
     }
 
-    public function getSidebarById(string $resourceType, string $id, string $lang = null)
+    public function getSidebarById(string $resourceType, string $id, ?string $lang = null): array
     {
         $path = '/wp-json/wp-rest-api-sidebars/v1/%s/%s';
 
@@ -174,8 +174,8 @@ class Client
         string $parentId = '0',
         string $postId = '0',
         string $status = 'approve',
-        $secure = false
-    ) {
+        bool $secure = false
+    ): array {
         $headers = $secure ? $this->getAuthHeader() : [];
 
         $path = '/wp-json/wp/v2/comments?author_email=%s&author_name=%s&content=%s&parent=%s&post=%s&status=%s';
@@ -188,16 +188,16 @@ class Client
         return json_decode($response->getBody()->getContents(), true);
     }
 
-    private function getAuthHeader()
+    private function getAuthHeader(): array
     {
         if (!$this->applicationUser || !$this->applicationPassword) {
             throw new AuthorizationNotConfigured();
         }
 
-        return $headers = ['auth' => [$this->applicationUser, $this->applicationPassword]];
+        return ['auth' => [$this->applicationUser, $this->applicationPassword]];
     }
 
-    public function deleteResource(string $resourceType, string $lang, string $identifier)
+    public function deleteResource(string $resourceType, ?string $lang, string $identifier): void
     {
         $headers = $this->getAuthHeader();
         $path = '/wp-json/wp/v2/%s/%s';
